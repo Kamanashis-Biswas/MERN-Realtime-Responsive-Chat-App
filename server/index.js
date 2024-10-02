@@ -5,6 +5,7 @@ import express from "express";
 import mongoose from "mongoose";
 import authRoutes from "./routes/AuthRoutes.js";
 import contactsRoutes from "./routes/ContactRoutes.js";
+import setupSocket from "./socket.js";
 
 dotenv.config();
 
@@ -31,6 +32,8 @@ app.use("/api/contacts", contactsRoutes);
 const server = app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
+setupSocket(server);
 
 mongoose
   .connect(databaseURL)
