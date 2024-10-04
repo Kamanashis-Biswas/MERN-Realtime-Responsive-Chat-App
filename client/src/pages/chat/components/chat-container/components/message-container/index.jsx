@@ -1,24 +1,59 @@
 import { useEffect, useRef } from "react";
 import moment from "moment";
 import { useAppStore } from "../../../../../../store";
+import { apiClient } from "../../../../../../lib/api-client";
+import { GET_ALL_MESSAGES_ROUTE } from "../../../../../../utilis/constants";
 
 const MessageContainer = () => {
   const scrollRef = useRef();
-  const { selectedChatType, selectedChatData, userInfo, selectedChatMessages } =
-    useAppStore();
+  const {
+    selectedChatType,
+    selectedChatData,
+    userInfo,
+    selectedChatMessages,
+    setSelectedChatMessages,
+  } = useAppStore();
 
+  useEffect(() => {
+    const getMessages = async () => {
+      try {
+        const response = await apiClient.post(
+          GET_ALL_MESSAGES_ROUTE,
+          { id: selectedChatData._id },
+          { withCredentials: true }
+        );
+
+        // Ensure response data is handled correctly
+        if (response.data && response.data.length > 0) {
+          setSelectedChatMessages(response.data); // Set all retrieved messages
+        } else {
+          console.log("No messages found");
+        }
+      } catch (error) {
+        console.log({ error });
+      }
+    };
+
+    if (selectedChatData._id) {
+      if (selectedChatType === "contact") getMessages();
+    }
+  }, [selectedChatData, selectedChatType, setSelectedChatMessages]);
+
+  // Automatically scroll to the latest message
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [selectedChatMessages]);
 
+  // Render messages
   const renderMessages = () => {
     let lastDate = null;
     return selectedChatMessages.map((message, index) => {
       const messageDate = moment(message.timestamp).format("YYYY-MM-DD");
       const showDate = messageDate !== lastDate;
       lastDate = messageDate;
+
       return (
         <div key={index}>
           {showDate && (
