@@ -2,7 +2,12 @@ import { useEffect, useRef } from "react";
 import moment from "moment";
 import { useAppStore } from "../../../../../../store";
 import { apiClient } from "../../../../../../lib/api-client";
-import { GET_ALL_MESSAGES_ROUTE } from "../../../../../../utilis/constants";
+import {
+  GET_ALL_MESSAGES_ROUTE,
+  HOST,
+} from "../../../../../../utilis/constants";
+import { FaFileAlt } from "react-icons/fa";
+import { IoMdArrowRoundDown } from "react-icons/io";
 
 const MessageContainer = () => {
   const scrollRef = useRef();
@@ -46,6 +51,11 @@ const MessageContainer = () => {
     }
   }, [selectedChatMessages]);
 
+  const checkImage = (filePath) => {
+    const ImageRegex = /\.(jpg|jpeg|png|gif|bmp|tiff|webp|svg|ico|heic|heif)$/i;
+    return ImageRegex.test(filePath);
+  };
+
   // Render messages
   const renderMessages = () => {
     let lastDate = null;
@@ -67,6 +77,20 @@ const MessageContainer = () => {
     });
   };
 
+  const downloadFile = async (url) => {
+    const response = await apiClient.get(`${HOST}/${url}`, {
+      responseType: "blob",
+    });
+    const urlBlob = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = urlBlob;
+    link.setAttribute("download", url.split("/").pop());
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(urlBlob);
+  };
+
   const renderDMMessages = (message) => (
     <div
       className={`${
@@ -84,6 +108,38 @@ const MessageContainer = () => {
           {message.content}
         </div>
       )}
+      {message.messageType === "file" && (
+        <div
+          className={`${
+            message.sender !== selectedChatData._id
+              ? "bg-[#8417ff]/5 text-[#8417ff]/90 border-[#8417ff]/50"
+              : "bg-[#2a2b33]/5 text-white/80 border-[#ffffff]/20"
+          } border inline-block p-4 rounded my-1 max-w-[50%] break-words`}
+        >
+          {checkImage(message.file) ? (
+            <div className="cursor-pointer">
+              <img src={`${HOST}/${message.file}`} height={300} width={300} />
+            </div>
+          ) : (
+            message.file &&
+            typeof message.file === "string" && ( // Check if message.file exists and is a string
+              <div className="flex items-center justify-center gap-4">
+                <span className="text-white/80 text-3xl bg-black/20 rounded-full p-3">
+                  <FaFileAlt />
+                </span>
+                <span>{message.file.split("/").pop()}</span>
+                <span
+                  className="bg-black/20 p-3 text-2xl rounded-full hover:bg-black/50 cursor-pointer transition-all duration-300"
+                  onClick={() => downloadFile(message.file)}
+                >
+                  <IoMdArrowRoundDown />
+                </span>
+              </div>
+            )
+          )}
+        </div>
+      )}
+
       <div className="text-xs text-gray-600">
         {moment(message.timestamp).format("LT")}
       </div>

@@ -22,21 +22,35 @@ const setupSocket = (server) => {
     }
   };
 
-  const sendMessage = async (message) => {
-    const senderSocketId = userSocketMap.get(message.sender);
-    const recipientSocketId = userSocketMap.get(message.recipient);
+  const sendMessage = async (data) => {
+    try {
+      const { sender, recipient, messageType, content, fileUrl } = data; // Change `file` to `fileUrl`
 
-    const createMessage = await Messages.create(message);
+      const newMessage = new Messages({
+        sender,
+        recipient,
+        messageType,
+        content: messageType === "text" ? content : undefined,
+        file: messageType === "file" ? fileUrl : undefined, // Use `fileUrl` here
+      });
 
-    const messageData = await Messages.findById(createMessage._id)
-      .populate("sender", "id email firstName lastName image color")
-      .populate("recipient", "id email firstName lastName image color");
+      await newMessage.save();
 
-    if (recipientSocketId) {
-      io.to(recipientSocketId).emit("receiveMessage", messageData);
-    }
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("receiveMessage", messageData);
+      const senderSocketId = userSocketMap.get(sender);
+      const recipientSocketId = userSocketMap.get(recipient);
+
+      const messageData = await Messages.findById(newMessage._id)
+        .populate("sender", "id email firstName lastName image color")
+        .populate("recipient", "id email firstName lastName image color");
+
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("receiveMessage", messageData);
+      }
+      if (senderSocketId) {
+        io.to(senderSocketId).emit("receiveMessage", messageData);
+      }
+    } catch (error) {
+      console.error("Error saving message: ", error);
     }
   };
 
