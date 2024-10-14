@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import moment from "moment";
 import { useAppStore } from "../../../../../../store";
 import { apiClient } from "../../../../../../lib/api-client";
@@ -8,6 +8,7 @@ import {
 } from "../../../../../../utilis/constants";
 import { FaFileAlt } from "react-icons/fa";
 import { IoMdArrowRoundDown } from "react-icons/io";
+import { IoCloseSharp } from "react-icons/io5";
 
 const MessageContainer = () => {
   const scrollRef = useRef();
@@ -19,6 +20,9 @@ const MessageContainer = () => {
     setSelectedChatMessages,
   } = useAppStore();
 
+  const [showImage, setShowImage] = useState(false);
+  const [imageUrl, setImageUrl] = useState(null);
+
   useEffect(() => {
     const getMessages = async () => {
       try {
@@ -28,9 +32,8 @@ const MessageContainer = () => {
           { withCredentials: true }
         );
 
-        // Ensure response data is handled correctly
         if (response.data && response.data.length > 0) {
-          setSelectedChatMessages(response.data); // Set all retrieved messages
+          setSelectedChatMessages(response.data);
         } else {
           console.log("No messages found");
         }
@@ -44,7 +47,6 @@ const MessageContainer = () => {
     }
   }, [selectedChatData, selectedChatType, setSelectedChatMessages]);
 
-  // Automatically scroll to the latest message
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
@@ -56,7 +58,6 @@ const MessageContainer = () => {
     return ImageRegex.test(filePath);
   };
 
-  // Render messages
   const renderMessages = () => {
     let lastDate = null;
     return selectedChatMessages.map((message, index) => {
@@ -117,12 +118,18 @@ const MessageContainer = () => {
           } border inline-block p-4 rounded my-1 max-w-[50%] break-words`}
         >
           {checkImage(message.file) ? (
-            <div className="cursor-pointer">
+            <div
+              className="cursor-pointer"
+              onClick={() => {
+                setShowImage(true);
+                setImageUrl(message.file);
+              }}
+            >
               <img src={`${HOST}/${message.file}`} height={300} width={300} />
             </div>
           ) : (
             message.file &&
-            typeof message.file === "string" && ( // Check if message.file exists and is a string
+            typeof message.file === "string" && (
               <div className="flex items-center justify-center gap-4">
                 <span className="text-white/80 text-3xl bg-black/20 rounded-full p-3">
                   <FaFileAlt />
@@ -150,6 +157,33 @@ const MessageContainer = () => {
     <div className="flex-1 overflow-y-auto scrollbar-hidden p-4 px-8 md:w-[65vw] lg:w-[70vw] xl:w-[80vw] w-full">
       {renderMessages()}
       <div ref={scrollRef} />
+      {showImage && (
+        <div className="fixed z-[1000] top-0 left-0 h-[100vh] w-[100vw] flex items-center justify-center backdrop-blur-lg flex-col">
+          <div>
+            <img
+              src={`${HOST}/${imageUrl}`}
+              className="h-[80vh] w-full bg-cover"
+            />
+          </div>
+          <div className="flex gap-5 fixed top-0 mt-5">
+            <button
+              className="bg-black/20 p-3 text-2xl rounded-full hover:bg-black/50 cursor-pointer transition-all duration-300"
+              onClick={() => downloadFile(imageUrl)}
+            >
+              <IoMdArrowRoundDown />
+            </button>
+            <button
+              className="bg-black/20 p-3 text-2xl rounded-full hover:bg-black/50 cursor-pointer transition-all duration-300"
+              onClick={() => {
+                setShowImage(false);
+                setImageUrl(null);
+              }}
+            >
+              <IoCloseSharp />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
