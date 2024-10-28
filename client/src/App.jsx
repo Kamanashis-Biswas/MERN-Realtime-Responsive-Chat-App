@@ -33,7 +33,6 @@ const App = () => {
         } else {
           userInfo(undefined);
         }
-        console.log({ response });
       } catch (error) {
         setUserInfo(undefined);
       } finally {

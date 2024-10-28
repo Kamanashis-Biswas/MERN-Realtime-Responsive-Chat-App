@@ -57,7 +57,6 @@ const Auth = () => {
         if (response.data.user.profileSetup) navigate("/chat");
         else navigate("/profile");
       }
-      console.log({ response });
     }
   };
 
@@ -72,7 +71,6 @@ const Auth = () => {
         setUserInfo(response.data.user);
         navigate("/profile");
       }
-      console.log({ response });
     }
   };
 

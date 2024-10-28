@@ -84,7 +84,6 @@ const MessageBar = () => {
           }
         }
       }
-      console.log({ file });
     } catch (error) {
       setIsUploading(false);
       console.log({ error });
